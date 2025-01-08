@@ -7,7 +7,7 @@ export default defineConfig({
   base: '/tetris/',
   build: {
     outDir: 'docs',
-    emptyOutDir: true,
-    assetsDir: 'assets'
-  }
+    emptyOutDir: true
+}
+
 })
