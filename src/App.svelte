@@ -38,39 +38,39 @@
   let ap = [0, 4];
   let aa = 2;
   let idozites;
-  let játékElindítva = false;
-  let pontszám = 0;
+  let gameStarted = false;
+  let score = 0;
 
-  function játékÚjraindítása() {
+  function resetGame() {
     pálya = Array.from({ length: 20 }, () =>
       Array.from({ length: 10 }, () => 0)
     );
     ap = [0, 4];
     aa = Math.floor(Math.random() * alakzatok.length);
-    pontszám = 0;
-    időzítésIndítása();
+    score = 0;
+    startTimer();
   }
 
-  function időzítésIndítása() {
+  function startTimer() {
     idozites = setInterval(() => {
       ap[0]++;
-      if (ütközés()) {
+      if (collision()) {
         ap[0]--;
-        egyesítés();
-        sorokTörlése();
+        merge();
+        clearRows();
         ap = [0, 4];
-        aa = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5)[0];
-        if (ütközés()) {
+        aa = [0, 1, 2, 3, 4, 5, 6].sort((a, b) => Math.random() - 0.5)[0];
+        if (collision()) {
           clearInterval(idozites);
-          játékÚjraindítása();
+          resetGame();
         }
       }
     }, 1000);
   }
 
-  function ütközés() {
+  function collision() {
     for (let i = 0; i < alakzatok[aa].length; i++) {
-      for (let j = 0; i < alakzatok[aa][i].length; j++) {
+      for (let j = 0; j < alakzatok[aa][i].length; j++) {
         if (
           alakzatok[aa][i][j] &&
           (pálya[ap[0] + i] && pálya[ap[0] + i][ap[1] + j]) !== 0
@@ -82,9 +82,9 @@
     return false;
   }
 
-  function egyesítés() {
+  function merge() {
     for (let i = 0; i < alakzatok[aa].length; i++) {
-      for (let j = 0; i < alakzatok[aa][i].length; j++) {
+      for (let j = 0; j < alakzatok[aa][i].length; j++) {
         if (alakzatok[aa][i][j]) {
           pálya[ap[0] + i][ap[1] + j] = alakzatok[aa][i][j];
         }
@@ -92,11 +92,11 @@
     }
   }
 
-  function sorokTörlése() {
-    let töröltSorok = 0;
-    pálya = pálya.filter(sor => {
-      if (sor.every(cell => cell !== 0)) {
-        töröltSorok++;
+  function clearRows() {
+    let linesCleared = 0;
+    pálya = pálya.filter(row => {
+      if (row.every(cell => cell !== 0)) {
+        linesCleared++;
         return false;
       }
       return true;
@@ -104,31 +104,32 @@
     while (pálya.length < 20) {
       pálya.unshift(Array(10).fill(0));
     }
-    pontszám += töröltSorok * 10 * töröltSorok;
+    score += linesCleared * 10 * linesCleared;
   }
 
-  function forgatás() {
+  function rotate() {
     const fa = alakzatok[aa][0].map((_, i) =>
-      alakzatok[aa].map(sor => sor[i]).reverse()
+      alakzatok[aa].map(row => row[i]).reverse()
     );
-    const régiAA = alakzatok[aa];
+    const oldAA = alakzatok[aa];
     alakzatok[aa] = fa;
-    if (ütközés()) {
-      alakzatok[aa] = régiAA;
+    if (collision()) {
+      alakzatok[aa] = oldAA;
     }
   }
 
-  function játékIndítása() {
-    játékElindítva = true;
-    időzítésIndítása();
+  function startGame() {
+    gameStarted = true;
+    startTimer();
   }
 
   onMount(() => {
+    // Do not start the timer on mount
   });
 </script>
 
 <main>
-  <div class="pálya">
+  <div class="palya">
     {#each pálya as sor, i}
       {#each sor as oszlop, j}
         {#if i >= ap[0] && i < ap[0] + alakzatok[aa].length && j >= ap[1] && j < ap[1] + alakzatok[aa][0].length && alakzatok[aa][i - ap[0]][j - ap[1]]}
@@ -139,35 +140,35 @@
       {/each}
     {/each}
   </div>
-  <div>Pontszám: {pontszám}</div>
-  <button on:click={játékIndítása} tabindex="0" on:keydown={e => {
-    if (!játékElindítva) return;
+  <div>Score: {score}</div>
+  <button on:click={startGame} tabindex="0" on:keydown={e => {
+    if (!gameStarted) return;
     if (e.key === 'ArrowLeft' && ap[1] > 0) {
       ap[1]--;
-      if (ütközés()) {
+      if (collision()) {
         ap[1]++;
       }
     }
     if (e.key === 'ArrowRight' && ap[1] + alakzatok[aa][0].length < pálya[0].length) {
       ap[1]++;
-      if (ütközés()) {
+      if (collision()) {
         ap[1]--;
       }
     }
     if (e.key === 'ArrowDown') {
       ap[0]++;
-      if (ütközés()) {
+      if (collision()) {
         ap[0]--;
       }
     }
     if (e.key === 'ArrowUp') {
-      forgatás();
+      rotate();
     }
   }}>Start</button>
 </main>
 
 <style>
-  .pálya {
+  .palya {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(20, 1fr);
